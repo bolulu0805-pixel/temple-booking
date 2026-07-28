@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { Solar } from "lunar-javascript";
 
 const PAGE_BG = "#FAF8F3";
 const SURFACE = "#FFFFFF";
@@ -25,12 +26,42 @@ const ADMIN_CODE = "0000"; // 僅作為前台登入畫面的初步檢查，真�
 // ⚠️ 部署 Google Apps Script 後，把取得的網址貼在這裡（見 README.md 的教學）
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQXnx24XIca6K0PcMx2ud6iUo-Qq3k-BPTFiSsKngZzxEiAUYMlHtDmtwBNwKmDhZy/exec";
 
+// ⚠️ 請把下面兩個換成宮廟實際的官方連結
+const LINE_URL = "https://line.me/R/ti/p/@your_line_id";
+const FACEBOOK_URL = "https://www.facebook.com/your_page";
+const INSTAGRAM_URL = "https://www.instagram.com/your_ig_id";
+
 function pad(n) {
   return String(n).padStart(2, "0");
 }
 
 function toDateKey(y, m, d) {
   return `${y}-${pad(m + 1)}-${pad(d)}`;
+}
+
+// 判斷指定的國曆日期是否落在農曆七月（鬼月）期間，自動計算，不需每年手動更新日期
+function isGhostMonth(y, m, d) {
+  try {
+    const lunar = Solar.fromYmd(y, m + 1, d).getLunar();
+    return lunar.getMonth() === 7;
+  } catch (e) {
+    return false;
+  }
+}
+
+// 將國曆生日換算成農曆年月日，並附上天干地支年份，供表單顯示對照用
+function getLunarBirthInfo(year, month, day) {
+  try {
+    const lunar = Solar.fromYmd(Number(year), Number(month), Number(day)).getLunar();
+    return {
+      ganZhiYear: lunar.getYearInGanZhi(),
+      monthChinese: lunar.getMonthInChinese(),
+      dayChinese: lunar.getDayInChinese(),
+      display: `${lunar.getYearInGanZhi()}年　農曆${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`,
+    };
+  } catch (e) {
+    return null;
+  }
 }
 
 function generateSlots() {
@@ -107,6 +138,7 @@ export default function TempleBookingPage() {
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [pendingTime, setPendingTime] = useState(null);
   const [step, setStep] = useState("notice");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -114,6 +146,7 @@ export default function TempleBookingPage() {
 
   const [form, setForm] = useState({
     name: "",
+    phone: "",
     address: "",
     calendarType: "國曆",
     birthYear: "",
@@ -153,6 +186,7 @@ export default function TempleBookingPage() {
   function handlePickDate(d) {
     if (!d) return;
     if (isPast(viewYear, viewMonth, d) || !isFriday(viewYear, viewMonth, d)) return;
+    if (isGhostMonth(viewYear, viewMonth, d)) return;
     setSelectedDate({ y: viewYear, m: viewMonth, d });
     setSelectedTime(null);
     setStep("slots");
@@ -183,9 +217,18 @@ export default function TempleBookingPage() {
 
   function pickTime(t) {
     if (bookedTimes.includes(t) || BLOCKED_SLOTS.includes(t) || dailyFull) return;
-    setSelectedTime(t);
+    setPendingTime(t);
+  }
+
+  function confirmPendingTime() {
+    setSelectedTime(pendingTime);
+    setPendingTime(null);
     setStep("form");
     setError("");
+  }
+
+  function cancelPendingTime() {
+    setPendingTime(null);
   }
 
   function updateField(key, value) {
@@ -197,6 +240,8 @@ export default function TempleBookingPage() {
     setError("");
 
     if (!form.name.trim()) return setError("請填寫問事者姓名");
+    if (!form.phone.trim()) return setError("請填寫聯絡手機號碼");
+    if (!/^09\d{8}$/.test(form.phone.trim())) return setError("請輸入正確格式的手機號碼（例如 0912345678）");
     if (!form.address.trim()) return setError("請填寫住址");
     if (!form.birthYear || !form.birthMonth || !form.birthDay) return setError("請完整填寫出生年月日");
     if (!form.zodiac) return setError("請選擇生肖");
@@ -212,6 +257,7 @@ export default function TempleBookingPage() {
           ...form,
           date: dateKey,
           time: selectedTime,
+          lunarInfo: lunarBirthInfo ? lunarBirthInfo.display : "",
         }),
       });
       const data = await res.json();
@@ -257,6 +303,7 @@ export default function TempleBookingPage() {
     setError("");
     setForm({
       name: "",
+      phone: "",
       address: "",
       calendarType: "國曆",
       birthYear: "",
@@ -270,6 +317,11 @@ export default function TempleBookingPage() {
 
   const yearOptions = [];
   for (let y = today.getFullYear(); y >= 1920; y--) yearOptions.push(y);
+
+  const lunarBirthInfo = useMemo(() => {
+    if (!form.birthYear || !form.birthMonth || !form.birthDay) return null;
+    return getLunarBirthInfo(form.birthYear, form.birthMonth, form.birthDay);
+  }, [form.birthYear, form.birthMonth, form.birthDay]);
 
   return (
     <div style={{ minHeight: "100vh", background: PAGE_BG, fontFamily: '"Noto Serif TC","PMingLiU","微軟正黑體",serif', color: TEXT }}>
@@ -298,6 +350,7 @@ export default function TempleBookingPage() {
             onPick={handlePickDate}
             isPast={isPast}
             isFriday={isFriday}
+            isGhostMonth={isGhostMonth}
           />
         )}
 
@@ -324,12 +377,17 @@ export default function TempleBookingPage() {
             submitting={submitting}
             error={error}
             yearOptions={yearOptions}
+            lunarBirthInfo={lunarBirthInfo}
           />
         )}
 
         {step === "done" && ticket && <TicketView ticket={ticket} onReset={resetAll} />}
 
         {step === "admin" && <AdminView onExit={() => setStep("notice")} />}
+
+        {pendingTime && (
+          <ConfirmTimeModal time={pendingTime} onConfirm={confirmPendingTime} onCancel={cancelPendingTime} />
+        )}
 
         <Footer />
 
@@ -343,6 +401,48 @@ export default function TempleBookingPage() {
             </button>
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ConfirmTimeModal({ time, onConfirm, onCancel }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(20,28,48,0.55)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 100,
+        padding: 20,
+      }}
+    >
+      <div
+        style={{
+          background: SURFACE,
+          borderRadius: 8,
+          maxWidth: 400,
+          width: "100%",
+          padding: "28px 24px",
+          border: `1px solid ${GOLD_FILL}`,
+          boxShadow: "0 12px 40px rgba(0,0,0,0.3)",
+        }}
+      >
+        <div style={{ fontSize: 15, fontWeight: 700, color: NAVY, marginBottom: 6 }}>預約時段：{time}</div>
+        <p style={{ fontSize: 14, lineHeight: 2, color: TEXT, margin: "12px 0 22px" }}>
+          此預約時間僅供參考，實際依現場情況安排為主；如過號請在現場等候工作人員重新為您叫號，煩請耐心等候。
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <button onClick={onConfirm} style={primaryBtnStyle}>
+            點擊按鈕即表示您已同意遵守預約規範
+          </button>
+          <button onClick={onCancel} style={navBtnStyle}>
+            返回重新選擇時段
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -574,7 +674,8 @@ function AdminView({ onExit }) {
                       </button>
                     </div>
                     <span style={{ fontSize: 12, color: MUTED }}>
-                      {b.address}　·　{b.calendarType} {b.birthYear}-{b.birthMonth}-{b.birthDay}　·　{b.zodiac}　·　{b.matter}
+                      {b.phone}　·　{b.address}　·　國曆 {b.birthYear}-{b.birthMonth}-{b.birthDay}
+                      {b.lunarInfo ? `　·　${b.lunarInfo}` : ""}　·　{b.zodiac}　·　{b.matter}
                     </span>
                     {b.note && <span style={{ fontSize: 12, color: MUTED }}>備註：{b.note}</span>}
                   </div>
@@ -615,7 +716,7 @@ function Hero() {
       >
         線上問事預約
       </div>
-      <p style={{ fontSize: 14, color: MUTED, letterSpacing: 2, margin: 0 }}>每週五晚間 20:00 開放預約問事</p>
+      <p style={{ fontSize: 14, color: MUTED, letterSpacing: 2, margin: 0 }}>彰化縣彰化市忠孝里惠民莊52號</p>
     </div>
   );
 }
@@ -638,13 +739,43 @@ function NoticeView({ onProceed }) {
       <div style={{ margin: "0 0 16px" }}>
         <NoticeItem number={1}>當日預約名額以 15 位為上限，如有需求請提早做預約。</NoticeItem>
         <NoticeItem number={2}>
-          如有任何問題，可先至官方社群平台（LINE/FB）私訊小編，但請注意基本禮儀，因粉專目前無專人服務，因此小編將會於收到訊息後
+          如有任何問題，可先至官方社群平台（LINE/FB/IG）私訊小編，但請注意基本禮儀，因粉專目前無專人服務，因此小編將會於收到訊息後
           <strong style={{ color: GOLD }}>2 個工作天內依照收到順序回覆您</strong>。
         </NoticeItem>
         <NoticeItem number={3}>官方社群平台將會公布當月開放預約日期，再請參照後再行預約。</NoticeItem>
         <NoticeItem number={4}>只要社群平台公開濟世日時間即可開始預約。</NoticeItem>
-        <NoticeItem number={5}>如有急需請在預約前向小編尋求協助，小編將會替您再做協調及溝通。</NoticeItem>
+        <NoticeItem number={5}>
+          <strong style={{ color: GOLD }}>如有急需，請在預約前向小編尋求協助，小編將會協助您再做溝通及協調。</strong>
+        </NoticeItem>
       </div>
+
+      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+        <a
+          href={LINE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ ...navBtnStyle, textDecoration: "none", flex: 1, textAlign: "center", display: "block" }}
+        >
+          官方 LINE
+        </a>
+        <a
+          href={FACEBOOK_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ ...navBtnStyle, textDecoration: "none", flex: 1, textAlign: "center", display: "block" }}
+        >
+          官方 Facebook
+        </a>
+        <a
+          href={INSTAGRAM_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ ...navBtnStyle, textDecoration: "none", flex: 1, textAlign: "center", display: "block" }}
+        >
+          官方 Instagram
+        </a>
+      </div>
+
       <p style={{ fontSize: 14, lineHeight: 2, color: TEXT, margin: "0 0 24px" }}>感謝您的配合</p>
       <button onClick={onProceed} style={primaryBtnStyle}>我已閱讀並了解，開始預約</button>
     </div>
@@ -677,7 +808,7 @@ function NoticeItem({ number, children }) {
   );
 }
 
-function CalendarView({ viewYear, viewMonth, monthMatrix, onPrev, onNext, onPick, isPast, isFriday }) {
+function CalendarView({ viewYear, viewMonth, monthMatrix, onPrev, onNext, onPick, isPast, isFriday, isGhostMonth }) {
   return (
     <div style={cardStyle}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -698,15 +829,18 @@ function CalendarView({ viewYear, viewMonth, monthMatrix, onPrev, onNext, onPick
             if (!d) return <div key={di} />;
             const past = isPast(viewYear, viewMonth, d);
             const friday = isFriday(viewYear, viewMonth, d);
-            const disabled = past || !friday;
+            const ghost = isGhostMonth(viewYear, viewMonth, d);
+            const disabled = past || !friday || ghost;
+            const bookable = friday && !past && !ghost;
             return (
               <button
                 key={di}
                 onClick={() => onPick(d)}
                 disabled={disabled}
+                title={ghost && friday && !past ? "農曆七月期間暫停開放預約" : undefined}
                 style={{
                   aspectRatio: "1",
-                  border: friday && !past ? `1px solid ${GOLD_FILL}` : `1px solid ${LINE}`,
+                  border: bookable ? `1px solid ${GOLD_FILL}` : `1px solid ${LINE}`,
                   borderRadius: 6,
                   background: disabled ? DISABLED_BG : SURFACE,
                   color: disabled ? DISABLED_TEXT : friday ? GOLD : TEXT,
@@ -721,7 +855,9 @@ function CalendarView({ viewYear, viewMonth, monthMatrix, onPrev, onNext, onPick
           })}
         </div>
       ))}
-      <p style={{ fontSize: 12, color: MUTED, marginTop: 12, textAlign: "center" }}>僅開放週五（金框標示日期），其餘日期無法預約</p>
+      <p style={{ fontSize: 12, color: MUTED, marginTop: 12, textAlign: "center" }}>
+        僅開放週五（金框標示日期），其餘日期無法預約。農曆七月期間暫停開放預約。
+      </p>
     </div>
   );
 }
@@ -771,7 +907,7 @@ function SlotsView({ dateKey, slots, bookedTimes, loading, onPick, onBack, daily
   );
 }
 
-function FormView({ dateKey, time, form, updateField, onSubmit, onBack, submitting, error, yearOptions }) {
+function FormView({ dateKey, time, form, updateField, onSubmit, onBack, submitting, error, yearOptions, lunarBirthInfo }) {
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   return (
@@ -784,16 +920,22 @@ function FormView({ dateKey, time, form, updateField, onSubmit, onBack, submitti
           <input style={inputStyle} value={form.name} onChange={(e) => updateField("name", e.target.value)} placeholder="請輸入姓名" />
         </Field>
 
+        <Field label="聯絡手機號碼">
+          <input
+            style={inputStyle}
+            value={form.phone}
+            onChange={(e) => updateField("phone", e.target.value)}
+            placeholder="例如 0912345678"
+            inputMode="numeric"
+          />
+        </Field>
+
         <Field label="住址">
           <input style={inputStyle} value={form.address} onChange={(e) => updateField("address", e.target.value)} placeholder="請輸入住址" />
         </Field>
 
-        <Field label="出生年月日">
+        <Field label="出生年月日（國曆）">
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <select style={{ ...inputStyle, flex: "0 0 90px" }} value={form.calendarType} onChange={(e) => updateField("calendarType", e.target.value)}>
-              <option value="國曆">國曆</option>
-              <option value="農曆">農曆</option>
-            </select>
             <select style={{ ...inputStyle, flex: "1 1 90px" }} value={form.birthYear} onChange={(e) => updateField("birthYear", e.target.value)}>
               <option value="">年</option>
               {yearOptions.map((y) => (
@@ -813,6 +955,9 @@ function FormView({ dateKey, time, form, updateField, onSubmit, onBack, submitti
               ))}
             </select>
           </div>
+          {lunarBirthInfo && (
+            <div style={{ fontSize: 13, color: GOLD, marginTop: 8 }}>農曆對照：{lunarBirthInfo.display}</div>
+          )}
         </Field>
 
         <Field label="生肖">
