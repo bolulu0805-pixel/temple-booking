@@ -21,15 +21,15 @@ const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
 const MAX_DAILY = 15;
 const BLOCKED_SLOTS = ["20:00", "20:15"];
 const QUEUE_OFFSET = BLOCKED_SLOTS.length;
-const ADMIN_CODE = "xuanwu"; // 僅作為前台登入畫面的初步檢查，真正的權限驗證在 Google Apps Script 後端
+const ADMIN_CODE = "0000"; // 僅作為前台登入畫面的初步檢查，真正的權限驗證在 Google Apps Script 後端
 
 // ⚠️ 部署 Google Apps Script 後，把取得的網址貼在這裡（見 README.md 的教學）
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQXnx24XIca6K0PcMx2ud6iUo-Qq3k-BPTFiSsKngZzxEiAUYMlHtDmtwBNwKmDhZy/exec";
 
 // ⚠️ 請把下面兩個換成宮廟實際的官方連結
-const LINE_URL = "https://lin.ee/RcF8kly";
-const FACEBOOK_URL = "https://www.facebook.com/xaun.wu.jhencinggong/";
-const INSTAGRAM_URL = "https://www.instagram.com/xuan_wu_jhencinggong";
+const LINE_URL = "https://line.me/R/ti/p/@your_line_id";
+const FACEBOOK_URL = "https://www.facebook.com/your_page";
+const INSTAGRAM_URL = "https://www.instagram.com/your_ig_id";
 
 function pad(n) {
   return String(n).padStart(2, "0");
@@ -714,7 +714,7 @@ function Hero() {
           lineHeight: 1.4,
         }}
       >
-        線上問事預約
+        濟世日線上預約系統
       </div>
       <p style={{ fontSize: 14, color: MUTED, letterSpacing: 2, margin: 0 }}>彰化縣彰化市忠孝里惠民莊52號</p>
     </div>
@@ -754,7 +754,7 @@ function NoticeView({ onProceed }) {
           href={LINE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ ...navBtnStyle, textDecoration: "none", flex: 1, textAlign: "center", display: "block" }}
+          style={{ ...navBtnStyle, textDecoration: "none", flex: 1, textAlign: "center", display: "block", whiteSpace: "nowrap" }}
         >
           官方 LINE
         </a>
@@ -762,17 +762,17 @@ function NoticeView({ onProceed }) {
           href={FACEBOOK_URL}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ ...navBtnStyle, textDecoration: "none", flex: 1, textAlign: "center", display: "block" }}
+          style={{ ...navBtnStyle, textDecoration: "none", flex: 1, textAlign: "center", display: "block", whiteSpace: "nowrap" }}
         >
-          官方 Facebook
+          官方 FB
         </a>
         <a
           href={INSTAGRAM_URL}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ ...navBtnStyle, textDecoration: "none", flex: 1, textAlign: "center", display: "block" }}
+          style={{ ...navBtnStyle, textDecoration: "none", flex: 1, textAlign: "center", display: "block", whiteSpace: "nowrap" }}
         >
-          官方 Instagram
+          官方 IG
         </a>
       </div>
 
@@ -791,8 +791,8 @@ function NoticeItem({ number, children }) {
           width: 20,
           height: 20,
           borderRadius: "50%",
-          border: `1px solid ${GOLD_FILL}`,
-          color: GOLD,
+          border: `1px solid ${NAVY}`,
+          color: NAVY,
           fontSize: 12,
           fontWeight: 700,
           display: "flex",
