@@ -27,9 +27,9 @@ const ADMIN_CODE = "0000"; // 僅作為前台登入畫面的初步檢查，真�
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQXnx24XIca6K0PcMx2ud6iUo-Qq3k-BPTFiSsKngZzxEiAUYMlHtDmtwBNwKmDhZy/exec";
 
 // ⚠️ 請把下面兩個換成宮廟實際的官方連結
-const LINE_URL = "https://line.me/R/ti/p/@your_line_id";
-const FACEBOOK_URL = "https://www.facebook.com/your_page";
-const INSTAGRAM_URL = "https://www.instagram.com/your_ig_id";
+const LINE_URL = "https://lin.ee/RcF8kly";
+const FACEBOOK_URL = "https://www.facebook.com/xaun.wu.jhencinggong/";
+const INSTAGRAM_URL = "https://www.instagram.com/xuan_wu_jhencinggong";
 
 function pad(n) {
   return String(n).padStart(2, "0");
@@ -699,24 +699,14 @@ function AdminView({ onExit }) {
 
 function Hero() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
-      <div
-        style={{
-          background: `linear-gradient(180deg, ${NAVY_SOFT}, ${NAVY})`,
-          borderRadius: 6,
-          padding: "22px 16px",
-          boxShadow: `0 0 0 2px ${GOLD_FILL} inset`,
-          writingMode: "vertical-rl",
-          fontSize: 30,
-          fontWeight: 700,
-          color: GOLD_BRIGHT,
-          letterSpacing: 10,
-          lineHeight: 1.4,
-        }}
-      >
-        濟世日線上預約系統
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+      <div style={{ fontSize: 28, fontWeight: 700, color: NAVY, letterSpacing: 6 }}>濟世日線上預約系統</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ width: 30, height: 2, background: GOLD_FILL, borderRadius: 2 }} />
+        <span style={{ width: 6, height: 6, background: GOLD_FILL, borderRadius: "50%" }} />
+        <span style={{ width: 30, height: 2, background: GOLD_FILL, borderRadius: 2 }} />
       </div>
-      <p style={{ fontSize: 14, color: MUTED, letterSpacing: 2, margin: 0 }}>彰化縣彰化市忠孝里惠民莊52號</p>
+      <p style={{ fontSize: 14, color: MUTED, letterSpacing: 2, margin: "8px 0 0" }}>彰化縣彰化市忠孝里惠民莊52號</p>
     </div>
   );
 }
@@ -791,8 +781,8 @@ function NoticeItem({ number, children }) {
           width: 20,
           height: 20,
           borderRadius: "50%",
-          border: `1px solid ${NAVY}`,
-          color: NAVY,
+          background: NAVY,
+          color: "#FFFFFF",
           fontSize: 12,
           fontWeight: 700,
           display: "flex",
