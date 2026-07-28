@@ -21,14 +21,14 @@ const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
 const MAX_DAILY = 15;
 const BLOCKED_SLOTS = ["20:00", "20:15"];
 const QUEUE_OFFSET = BLOCKED_SLOTS.length;
-const ADMIN_CODE = "0000"; // 僅作為前台登入畫面的初步檢查，真正的權限驗證在 Google Apps Script 後端
+const ADMIN_CODE = "xuanwu"; // 僅作為前台登入畫面的初步檢查，真正的權限驗證在 Google Apps Script 後端
 
 // ⚠️ 部署 Google Apps Script 後，把取得的網址貼在這裡（見 README.md 的教學）
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQXnx24XIca6K0PcMx2ud6iUo-Qq3k-BPTFiSsKngZzxEiAUYMlHtDmtwBNwKmDhZy/exec";
 
 // ⚠️ 請把下面兩個換成宮廟實際的官方連結
 const LINE_URL = "https://lin.ee/RcF8kly";
-const FACEBOOK_URL = "https://www.facebook.com/xaun.wu.jhencinggong/";
+const FACEBOOK_URL = "https://www.facebook.com/xaun.wu.jhencinggong";
 const INSTAGRAM_URL = "https://www.instagram.com/xuan_wu_jhencinggong";
 
 function pad(n) {
@@ -450,7 +450,7 @@ function ConfirmTimeModal({ time, onConfirm, onCancel }) {
 
 function Footer() {
   return (
-    <p style={{ fontSize: 12, color: MUTED, textAlign: "center", letterSpacing: 2, marginTop: 48 }}>彰化玄武真慶宮</p>
+    <p style={{ fontSize: 12, color: MUTED, textAlign: "center", letterSpacing: 2, marginTop: 48 }}>彰化縣彰化市忠孝里惠民莊52號</p>
   );
 }
 
@@ -706,7 +706,7 @@ function Hero() {
         <span style={{ width: 6, height: 6, background: GOLD_FILL, borderRadius: "50%" }} />
         <span style={{ width: 30, height: 2, background: GOLD_FILL, borderRadius: 2 }} />
       </div>
-      <p style={{ fontSize: 14, color: MUTED, letterSpacing: 2, margin: "8px 0 0" }}>彰化縣彰化市忠孝里惠民莊52號</p>
+      <p style={{ fontSize: 14, color: MUTED, letterSpacing: 2, margin: "8px 0 0" }}>彰化玄武真慶宮</p>
     </div>
   );
 }
