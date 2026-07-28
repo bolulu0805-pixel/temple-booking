@@ -27,7 +27,7 @@ const ADMIN_CODE = "xuanwu"; // 僅作為前台登入畫面的初步檢查，真
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQXnx24XIca6K0PcMx2ud6iUo-Qq3k-BPTFiSsKngZzxEiAUYMlHtDmtwBNwKmDhZy/exec";
 
 // ⚠️ 請把下面兩個換成宮廟實際的官方連結
-const LINE_URL = "https://https://lin.ee/RcF8kly";
+const LINE_URL = "https://lin.ee/RcF8kly";
 const FACEBOOK_URL = "https://www.facebook.com/xaun.wu.jhencinggong/";
 const INSTAGRAM_URL = "https://www.instagram.com/xuan_wu_jhencinggong";
 
