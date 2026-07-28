@@ -77,7 +77,10 @@ function useSharedSlots(dateKey) {
     if (!dateKey) return;
     setLoading(true);
     try {
-      const res = await fetch(`${APPS_SCRIPT_URL}?action=slots&date=${encodeURIComponent(dateKey)}`);
+      const res = await fetch(
+        `${APPS_SCRIPT_URL}?action=slots&date=${encodeURIComponent(dateKey)}&_ts=${Date.now()}`,
+        { cache: "no-store" }
+      );
       const data = await res.json();
       setBooked(data.booked || []);
     } catch (e) {
@@ -373,16 +376,29 @@ function AdminView({ onExit }) {
   const loadBookings = useCallback(async () => {
     if (!dateKey || !adminCode) return;
     setLoading(true);
-    try {
+
+    async function fetchOnce() {
       const res = await fetch(
-        `${APPS_SCRIPT_URL}?action=admin_list&date=${encodeURIComponent(dateKey)}&code=${encodeURIComponent(adminCode)}`
+        `${APPS_SCRIPT_URL}?action=admin_list&date=${encodeURIComponent(dateKey)}&code=${encodeURIComponent(
+          adminCode
+        )}&_ts=${Date.now()}`, // 加上時間戳記避免瀏覽器或 Google 端快取到舊的回應
+        { cache: "no-store" }
       );
-      const data = await res.json();
+      return res.json();
+    }
+
+    try {
+      let data = await fetchOnce();
+      if (data.error === "unauthorized") {
+        // 可能是暫時性的快取回應，先自動重試一次，不要立刻踢回登入畫面
+        data = await fetchOnce();
+      }
       if (data.error === "unauthorized") {
         setCodeError("密碼錯誤，請重新輸入");
         setAuthed(false);
         setBookings(null);
       } else {
+        setCodeError("");
         setBookings(data.bookings || []);
       }
     } catch (e) {
