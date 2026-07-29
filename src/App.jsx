@@ -21,14 +21,14 @@ const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
 const MAX_DAILY = 15;
 const BLOCKED_SLOTS = ["20:00", "20:15"];
 const QUEUE_OFFSET = BLOCKED_SLOTS.length;
-const ADMIN_CODE = "xuanwu"; // 僅作為前台登入畫面的初步檢查，真正的權限驗證在 Google Apps Script 後端
+const ADMIN_CODE = "0000"; // 僅作為前台登入畫面的初步檢查，真正的權限驗證在 Google Apps Script 後端
 
 // ⚠️ 部署 Google Apps Script 後，把取得的網址貼在這裡（見 README.md 的教學）
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQXnx24XIca6K0PcMx2ud6iUo-Qq3k-BPTFiSsKngZzxEiAUYMlHtDmtwBNwKmDhZy/exec";
 
 // ⚠️ 請把下面兩個換成宮廟實際的官方連結
 const LINE_URL = "https://lin.ee/RcF8kly";
-const FACEBOOK_URL = "https://www.facebook.com/xaun.wu.jhencinggong";
+const FACEBOOK_URL = "https://www.facebook.com/xaun.wu.jhencinggong/";
 const INSTAGRAM_URL = "https://www.instagram.com/xuan_wu_jhencinggong";
 
 function pad(n) {
@@ -996,7 +996,72 @@ function Field({ label, children }) {
   );
 }
 
+// 將號碼牌內容畫成一張圖片並觸發下載，讓信眾可以直接存檔，不用自己截圖
+function downloadTicketImage(ticket) {
+  const W = 480;
+  const H = 300;
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, NAVY_SOFT);
+  grad.addColorStop(1, NAVY);
+  ctx.fillStyle = grad;
+  roundRect(0, 0, W, H, 14);
+  ctx.fill();
+
+  ctx.strokeStyle = GOLD_FILL;
+  ctx.lineWidth = 3;
+  roundRect(3, 3, W - 6, H - 6, 12);
+  ctx.stroke();
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#A9B0C4";
+  ctx.font = "16px sans-serif";
+  ctx.fillText("號 碼 牌", W / 2, 55);
+
+  ctx.fillStyle = GOLD_BRIGHT;
+  ctx.font = "bold 76px sans-serif";
+  ctx.fillText(ticket.queue, W / 2, 150);
+
+  ctx.fillStyle = "#EDE6D3";
+  ctx.font = "18px sans-serif";
+  ctx.fillText(`${ticket.date}（週五）${ticket.time}`, W / 2, 190);
+
+  ctx.fillStyle = "#A9B0C4";
+  ctx.font = "14px sans-serif";
+  ctx.fillText(`${ticket.name} · ${ticket.matter}`, W / 2, 215);
+
+  ctx.fillStyle = GOLD_FILL;
+  ctx.font = "bold 14px sans-serif";
+  ctx.fillText("彰化玄武真慶宮", W / 2, 260);
+
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `號碼牌_${ticket.date}_${ticket.time}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, "image/png");
+}
+
 function TicketView({ ticket, onReset }) {
+  const [savedMsg, setSavedMsg] = useState("");
   const width = 400;
   const height = 240;
   return (
@@ -1043,9 +1108,36 @@ function TicketView({ ticket, onReset }) {
         <div style={{ fontSize: 14, color: "#EDE6D3", marginTop: 8 }}>{ticket.date}（週五）{ticket.time}</div>
         <div style={{ fontSize: 13, color: "#A9B0C4" }}>{ticket.name} · {ticket.matter}</div>
       </div>
-      <p style={{ fontSize: 13, color: MUTED, textAlign: "center", maxWidth: 360 }}>
-        預約完成，請於當日時段準時報到。此號碼牌與您填寫的資料已保存於您目前使用的裝置。
-      </p>
+
+      <button
+        onClick={() => {
+          downloadTicketImage(ticket);
+          setSavedMsg("已下載！請至相簿或下載資料夾查看");
+          setTimeout(() => setSavedMsg(""), 3000);
+        }}
+        style={{ ...primaryBtnStyle, maxWidth: 320 }}
+      >
+        📥 儲存號碼牌圖片
+      </button>
+      {savedMsg && <p style={{ fontSize: 12, color: GOLD, margin: 0 }}>{savedMsg}</p>}
+
+      <div
+        style={{
+          background: "#FDEEEE",
+          border: "2px dashed #B23A3A",
+          borderRadius: 8,
+          padding: "14px 16px",
+          maxWidth: 340,
+        }}
+      >
+        <p style={{ margin: 0, color: "#B23A3A", fontSize: 13, lineHeight: 1.9, fontWeight: 700 }}>
+          ⚠️ 預約完成請保存或截圖此頁面，並回傳至官方帳號（LINE 或 FB），才算預約成功喔！
+        </p>
+        <p style={{ margin: "8px 0 0", color: "#B23A3A", fontSize: 13, lineHeight: 1.9, fontWeight: 700 }}>
+          ⚠️ 再次提醒，未於預約時間完成報到，則需等候現場重新安排！
+        </p>
+      </div>
+
       <button onClick={onReset} style={navBtnStyle}>再預約一筆</button>
     </div>
   );
